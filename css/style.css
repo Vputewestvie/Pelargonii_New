@@ -1,3 +1,2 @@
-body { color: #1C352D; }
-img { transition: transform 0.3s ease; }
-img:hover { transform: scale(1.02); }
+.plant-card { transition: transform 0.2s; }
+.plant-card:hover { transform: translateY(-5px); }
