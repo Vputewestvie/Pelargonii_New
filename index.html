@@ -14,7 +14,6 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Настройка цветов Tailwind -->
     <script>
         tailwind.config = {
             theme: {
@@ -71,7 +70,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-24">
             <template x-for="plant in filteredPlants()" :key="plant.id">
                 <div class="bg-white rounded-3xl border border-botanical-sage/10 shadow-sm overflow-hidden flex flex-col hover:shadow-xl transition duration-300">
-                    <!-- Изображение -->
+                    
                     <div class="relative aspect-[4/3] bg-botanical-cream overflow-hidden cursor-pointer" @click="openModal(plant)">
                         <img :src="plant.media[0]" class="w-full h-full object-contain hover:scale-105 transition duration-500">
                         <div class="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] uppercase font-semibold text-botanical-gold shadow-sm" x-text="plant.group"></div>
@@ -80,10 +79,9 @@
                         </div>
                     </div>
 
-                    <!-- Описание -->
                     <div class="p-6 flex flex-col flex-grow">
                         <h3 class="font-serif text-xl font-bold leading-tight text-botanical-deep cursor-pointer" @click="openModal(plant)">
-                            <span x-text="plant.number ? '№' + plant.number + ' ' : ''"></span><span x-text="plant.title"></span>
+                            <span x-text="plant.title"></span>
                         </h3>
                         
                         <div class="flex gap-4 my-4 text-xs text-botanical-sage border-y border-botanical-sage/5 py-3">
@@ -104,7 +102,7 @@
         </div>
     </main>
 
-    <!-- ПОДРОБНОЕ ОКНО СОРТА (УРОВЕНЬ WILDBERRIES) -->
+    <!-- ПОДРОБНОЕ ОКНО СОРТА (С ФОТОГАЛЕРЕЕЙ) -->
     <div x-show="modalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" x-transition>
         <div class="flex items-center justify-center min-h-screen px-4 py-6">
             <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" @click="closeModal()"></div>
@@ -112,7 +110,7 @@
             <div class="bg-white rounded-3xl max-w-5xl w-full mx-auto relative z-10 overflow-hidden shadow-2xl flex flex-col md:flex-row">
                 <button @click="closeModal()" class="absolute top-4 right-4 bg-white/90 hover:bg-gray-100 p-2.5 rounded-full shadow-md z-20 text-botanical-deep font-bold">✕</button>
 
-                <!-- Левая часть: PhotoSwipe Галерея -->
+                <!-- Левая часть: Галерея -->
                 <div class="md:w-1/2 bg-botanical-cream p-6 flex flex-col justify-center border-r border-gray-100">
                     <div id="modal-gallery" class="pswp-gallery relative aspect-square bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-zoom-in">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
@@ -124,21 +122,20 @@
                             <span class="bg-black/50 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md">Нажмите для увеличения</span>
                         </div>
                     </div>
-                    <!-- Миниатюры -->
-                    <div class="flex gap-2 mt-4 overflow-x-auto hide-scrollbar pb-2">
+                    <!-- Миниатюры в окне -->
+                    <div class="flex gap-2 mt-4 overflow-x-auto hide-scrollbar pb-2" x-show="currentPlant.media && currentPlant.media.length > 1">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
                             <img :src="photo" @click="activePhotoIndex = index" class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 transition" :class="activePhotoIndex === index ? 'border-botanical-gold' : 'border-transparent opacity-60'">
                         </template>
                     </div>
                 </div>
 
-                <!-- Правая часть: Описание и уход -->
+                <!-- Правая часть: Текст -->
                 <div class="md:w-1/2 p-8 lg:p-10 flex flex-col h-full max-h-[85vh] overflow-y-auto">
                     <span class="text-xs uppercase tracking-wider text-botanical-gold font-semibold" x-text="capitalize(currentPlant.group || '')"></span>
-                    <h2 class="font-serif text-3xl font-bold text-botanical-deep mt-2 leading-tight" x-text="(currentPlant.number ? '№' + currentPlant.number + ' ' : '') + currentPlant.title"></h2>
+                    <h2 class="font-serif text-3xl font-bold text-botanical-deep mt-2 leading-tight" x-text="currentPlant.title"></h2>
                     <p class="text-sm text-botanical-sage italic mt-1" x-text="currentPlant.latinTitle"></p>
 
-                    <!-- Описание (Буллиты) -->
                     <div class="mt-6 space-y-3">
                         <template x-for="bullet in parseBullets(currentPlant.description)" :key="bullet">
                             <div class="flex items-start gap-3 text-sm text-botanical-deep">
@@ -148,7 +145,6 @@
                         </template>
                     </div>
 
-                    <!-- Справка по уходу -->
                     <div class="mt-8 bg-botanical-cream p-5 rounded-2xl border border-botanical-sage/10">
                         <h4 class="text-xs uppercase tracking-wider font-bold text-botanical-gold mb-4">🌿 Памятка по уходу</h4>
                         <div class="text-sm space-y-3 text-botanical-deep">
@@ -169,7 +165,7 @@
     <!-- ТАБЛИЦА СРАВНЕНИЯ -->
     <div x-show="comparisonList.length > 0" class="fixed bottom-28 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-botanical-gold/30 px-6 py-4 flex items-center gap-6 z-40" style="display: none;" x-transition>
         <span class="text-sm font-bold text-botanical-deep flex items-center gap-2">⚖️ К сравнению: <span x-text="comparisonList.length"></span></span>
-        <button @click="comparisonOpen = true" class="bg-botanical-gold text-white px-5 py-2.5 rounded-xl text-xs font-bold transition">Сравнить сорта</button>
+        <button @click="comparisonOpen = true" class="bg-botanical-gold text-white px-5 py-2.5 rounded-xl text-xs font-bold transition">Сравнить</button>
         <button @click="comparisonList = []" class="text-xs text-gray-400 hover:text-red-500 font-bold uppercase tracking-wider">Очистить</button>
     </div>
 
@@ -208,12 +204,6 @@
                             </template>
                         </tr>
                         <tr class="border-b border-gray-100">
-                            <td class="py-4 font-bold text-gray-400 text-xs uppercase">Размер соцветия</td>
-                            <template x-for="item in comparisonList" :key="item.id">
-                                <td class="py-4 px-4 font-semibold" x-text="item.inflorescenceSize || '—'"></td>
-                            </template>
-                        </tr>
-                        <tr class="border-b border-gray-100">
                             <td class="py-4 font-bold text-gray-400 text-xs uppercase">Цена</td>
                             <template x-for="item in comparisonList" :key="item.id">
                                 <td class="py-4 px-4 font-bold text-xl" x-text="item.price + ' ₽'"></td>
@@ -234,7 +224,7 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
-    <!-- СКРИПТЫ (Всё в одном) -->
+    <!-- СКРИПТ (Бронебойный вариант) -->
     <script type="module">
         import PhotoSwipeLightbox from 'https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe-lightbox.esm.min.js';
 
@@ -250,26 +240,43 @@
                         const id = '1tr_vl_q8yh4grAmJkaD7QvmueQQvbJGojm7C_otpyd4';
                         const res = await fetch(`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json`);
                         const text = await res.text();
-                        const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
                         
-                        this.plants = json.table.rows.slice(1).map((row, i) => {
-                            const c = (idx) => row.c[idx]?.v || '';
+                        const startIdx = text.indexOf('{');
+                        const endIdx = text.lastIndexOf('}');
+                        if (startIdx === -1) return;
+                        
+                        const json = JSON.parse(text.substring(startIdx, endIdx + 1));
+                        
+                        // Парсим данные, игнорируя пустые строки
+                        this.plants = json.table.rows.map((row, i) => {
+                            // Безопасная функция получения ячейки (без символа ?.)
+                            const c = (idx) => {
+                                if (!row || !row.c || !row.c[idx] || row.c[idx].v === null || row.c[idx].v === undefined) return '';
+                                return String(row.c[idx].v).trim();
+                            };
+
+                            const title = c(1);
+                            if (!title) return null; // Пропускаем пустые строки!
+
                             const mediaList = [];
-                            if (c(12)) mediaList.push(...c(12).split('|').map(s=>s.trim()).filter(s=>s));
-                            if (c(13)) mediaList.push(...c(13).split('|').map(s=>s.trim()).filter(s=>s));
+                            const colM = c(12); // Фото цветения
+                            const colN = c(13); // Фото черенка
+                            
+                            if (colM) mediaList.push(...colM.split('|').map(s=>s.trim()).filter(s=>s));
+                            if (colN) mediaList.push(...colN.split('|').map(s=>s.trim()).filter(s=>s));
                             if (mediaList.length === 0) mediaList.push('https://via.placeholder.com/600?text=Нет+фото');
 
                             return {
-                                id: i, number: c(0), title: c(1), stock: Number(c(2)) || 0,
-                                latinTitle: c(3), group: (c(4) || 'all').toLowerCase().trim(),
+                                id: i, number: c(0), title: title, stock: Number(c(2)) || 0,
+                                latinTitle: c(3), group: (c(4) || 'all').toLowerCase(),
                                 flowerSize: c(6), inflorescenceSize: c(7), price: Number(c(8)) || 0,
                                 description: c(9), color: c(5), media: mediaList
                             };
-                        }).filter(p => p.title);
+                        }).filter(p => p !== null);
 
                         this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
                         
-                        // Инициализация PhotoSwipe для модального окна
+                        // Инициализация PhotoSwipe
                         this.$nextTick(() => {
                             this.lightbox = new PhotoSwipeLightbox({
                                 gallery: '#modal-gallery',
@@ -278,7 +285,9 @@
                             });
                             this.lightbox.init();
                         });
-                    } catch (e) { console.error("Ошибка:", e); }
+                    } catch (e) { 
+                        console.error("Ошибка загрузки:", e); 
+                    }
                 },
 
                 filteredPlants() {
@@ -296,7 +305,6 @@
                     this.modalOpen = true;
                 },
                 closeModal() { this.modalOpen = false; },
-                
                 capitalize(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1) : ''; },
                 parseBullets(desc) { return desc ? desc.split('•').map(b => b.trim()).filter(b => b) : []; },
                 
@@ -319,15 +327,15 @@
 
                 copyForAvito() {
                     let text = "Здравствуйте! Хочу приобрести:\n\n";
-                    this.selectionList.forEach(p => text += `• №${p.number} ${p.title} (${p.price} ₽)\n`);
+                    this.selectionList.forEach(p => text += `• ${p.title} (${p.price} ₽)\n`);
                     text += `\nИтого: ${this.calculateTotal()} ₽.`;
                     navigator.clipboard.writeText(text).then(() => alert('Список скопирован!'));
                 },
 
                 getCare(group) {
                     const g = (group || '').toLowerCase();
-                    if (g.includes('розебуд')) return { light: "Яркий свет. Избегать полуденных прямых лучей.", water: "Умеренный, после просыхания верхнего слоя." };
-                    if (g.includes('тюльпан')) return { light: "Рассеянный свет, боятся прямых ожогов.", water: "Очень умеренный, без застоя влаги." };
+                    if (g.includes('розебуд')) return { light: "Яркий свет. Избегать прямых лучей.", water: "Умеренный, после просыхания." };
+                    if (g.includes('тюльпан')) return { light: "Рассеянный свет, боятся ожогов.", water: "Очень умеренный, без застоя." };
                     return { light: "Яркий рассеянный свет.", water: "По мере просыхания земли." };
                 }
             }));
