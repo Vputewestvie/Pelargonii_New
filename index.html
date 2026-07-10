@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Авторская коллекция пеларгоний</title>
-    <!-- Шрифты и стили -->
+    
+    <!-- Шрифты -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind (Дизайн) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
-    
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
     <script>
         tailwind.config = {
             theme: {
@@ -24,6 +22,15 @@
             }
         }
     </script>
+
+    <!-- PhotoSwipe (Галерея и Зум) - Подключено надежным способом -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe-lightbox.umd.min.js"></script>
+    
+    <!-- Alpine.js (Логика сайта) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <style>
         body { background-color: #FAF9F5; color: #1C352D; font-family: 'Inter', sans-serif; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -81,7 +88,7 @@
 
                     <div class="p-6 flex flex-col flex-grow">
                         <h3 class="font-serif text-xl font-bold leading-tight text-botanical-deep cursor-pointer" @click="openModal(plant)">
-                            <span x-text="plant.title"></span>
+                            <span x-text="plant.number ? '№' + plant.number + ' ' : ''"></span><span x-text="plant.title"></span>
                         </h3>
                         
                         <div class="flex gap-4 my-4 text-xs text-botanical-sage border-y border-botanical-sage/5 py-3">
@@ -133,7 +140,7 @@
                 <!-- Правая часть: Текст -->
                 <div class="md:w-1/2 p-8 lg:p-10 flex flex-col h-full max-h-[85vh] overflow-y-auto">
                     <span class="text-xs uppercase tracking-wider text-botanical-gold font-semibold" x-text="capitalize(currentPlant.group || '')"></span>
-                    <h2 class="font-serif text-3xl font-bold text-botanical-deep mt-2 leading-tight" x-text="currentPlant.title"></h2>
+                    <h2 class="font-serif text-3xl font-bold text-botanical-deep mt-2 leading-tight" x-text="(currentPlant.number ? '№' + currentPlant.number + ' ' : '') + currentPlant.title"></h2>
                     <p class="text-sm text-botanical-sage italic mt-1" x-text="currentPlant.latinTitle"></p>
 
                     <div class="mt-6 space-y-3">
@@ -224,16 +231,14 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
+    <!-- АБСОЛЮТНО НАДЕЖНЫЙ СКРИПТ -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('catalogApp', () => ({
                 plants: [], groups: ['all'], activeGroup: 'all', searchQuery: '', 
                 onlyInStock: false, selectionList: [], comparisonList: [],
-                modalOpen: false, 
-                // ВОТ ИСПРАВЛЕНИЕ, ИЗ-ЗА КОТОРОГО БЫЛ БЕЛЫЙ ЭКРАН!
-                currentPlant: { media: [], title: '', group: '' }, 
+                modalOpen: false, currentPlant: { media: [], title: '', group: '' }, 
                 activePhotoIndex: 0, comparisonOpen: false,
-                lightbox: null,
                 
                 async init() {
                     try {
@@ -266,7 +271,7 @@
 
                             return {
                                 id: i, number: c(0), title: title, stock: Number(c(2)) || 0,
-                                latinTitle: c(3), group: (c(4) || 'all').toLowerCase(),
+                                latinTitle: c(3), group: String(c(4) || 'all').toLowerCase(),
                                 flowerSize: c(6), inflorescenceSize: c(7), price: Number(c(8)) || 0,
                                 description: c(9), color: c(5), media: mediaList
                             };
@@ -274,15 +279,14 @@
 
                         this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
                         
-                        this.$nextTick(async () => {
-                            const module = await import('https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe-lightbox.esm.min.js');
-                            const PhotoSwipeLightbox = module.default;
-                            this.lightbox = new PhotoSwipeLightbox({
+                        // Надежный запуск галереи
+                        this.$nextTick(() => {
+                            const lightbox = new PhotoSwipeLightbox({
                                 gallery: '#modal-gallery',
                                 children: 'a',
-                                pswpModule: () => import('https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.esm.min.js')
+                                pswpModule: PhotoSwipe
                             });
-                            this.lightbox.init();
+                            lightbox.init();
                         });
                     } catch (e) { 
                         console.error("Ошибка загрузки:", e); 
@@ -293,7 +297,7 @@
                     return this.plants.filter(p => {
                         const mGroup = this.activeGroup === 'all' || p.group === this.activeGroup;
                         const mStock = !this.onlyInStock || p.stock > 0;
-                        const mSearch = p.title.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        const mSearch = String(p.title).toLowerCase().includes(this.searchQuery.toLowerCase());
                         return mGroup && mStock && mSearch;
                     });
                 },
@@ -304,8 +308,8 @@
                     this.modalOpen = true;
                 },
                 closeModal() { this.modalOpen = false; },
-                capitalize(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1) : ''; },
-                parseBullets(desc) { return desc ? desc.split('•').map(b => b.trim()).filter(b => b) : []; },
+                capitalize(str) { return str ? String(str).charAt(0).toUpperCase() + String(str).slice(1) : ''; },
+                parseBullets(desc) { return desc ? String(desc).split('•').map(b => b.trim()).filter(b => b) : []; },
                 
                 toggleSelection(p) { 
                     const idx = this.selectionList.findIndex(item => item.id === p.id);
@@ -332,7 +336,7 @@
                 },
 
                 getCare(group) {
-                    const g = (group || '').toLowerCase();
+                    const g = String(group || '').toLowerCase();
                     if (g.includes('розебуд')) return { light: "Яркий свет. Избегать прямых лучей.", water: "Умеренный, после просыхания." };
                     if (g.includes('тюльпан')) return { light: "Рассеянный свет, боятся ожогов.", water: "Очень умеренный, без застоя." };
                     return { light: "Яркий рассеянный свет.", water: "По мере просыхания земли." };
