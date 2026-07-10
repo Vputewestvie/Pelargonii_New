@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- PhotoSwipe (Для крутого зума) -->
+    <!-- PhotoSwipe (Надежное подключение) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe-lightbox.umd.min.js"></script>
@@ -85,7 +85,7 @@
 
                     <div class="p-6 flex flex-col flex-grow">
                         <h3 class="font-serif text-xl font-bold leading-tight text-botanical-deep cursor-pointer" @click="openModal(plant)">
-                            <span x-text="plant.number ? '№' + plant.number + ' ' : ''"></span><span x-text="plant.title"></span>
+                            <span x-text="plant.title"></span>
                         </h3>
                         
                         <div class="flex gap-4 my-4 text-xs text-botanical-sage border-y border-botanical-sage/5 py-3">
@@ -106,7 +106,7 @@
         </div>
     </main>
 
-    <!-- ПОДРОБНОЕ ОКНО СОРТА (С ИСПРАВЛЕННОЙ ГАЛЕРЕЕЙ) -->
+    <!-- ПОДРОБНОЕ ОКНО СОРТА -->
     <div x-show="modalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" x-transition>
         <div class="flex items-center justify-center min-h-screen px-4 py-6">
             <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" @click="closeModal()"></div>
@@ -114,24 +114,23 @@
             <div class="bg-white rounded-3xl max-w-5xl w-full mx-auto relative z-10 overflow-hidden shadow-2xl flex flex-col md:flex-row">
                 <button @click="closeModal()" class="absolute top-4 right-4 bg-white/90 hover:bg-gray-100 p-2.5 rounded-full shadow-md z-20 text-botanical-deep font-bold">✕</button>
 
-                <!-- Левая часть: Галерея (СКОРЕКТИРОВАНО) -->
+                <!-- Левая часть: Фото -->
                 <div class="md:w-1/2 bg-botanical-cream p-6 flex flex-col justify-center border-r border-gray-100">
                     
-                    <!-- ВОТ ЗДЕСЬ ИСПРАВЛЕНИЕ: Никаких <a>, только @click на контейнере -->
+                    <!-- КЛИК ДЛЯ ЗУМА ТЕПЕРЬ РАБОТАЕТ ПРОГРАММНО -->
                     <div class="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-zoom-in group" 
-                         @click="openZoom(activePhotoIndex)">
+                         @click="openZoom()">
                         
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
                             <img :src="photo" x-show="activePhotoIndex === index" class="w-full h-full object-contain cursor-zoom-in">
                         </template>
                         
-                        <!-- Подсказка при наведении -->
-                        <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center pointer-events-none">
+                        <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center pointer-events-none">
                             <span class="bg-black/60 text-white text-sm px-4 py-2 rounded-full backdrop-blur-md">🔍 Нажмите для увеличения</span>
                         </div>
                     </div>
                     
-                    <!-- Миниатюры в окне -->
+                    <!-- Миниатюры -->
                     <div class="flex gap-2 mt-4 overflow-x-auto hide-scrollbar pb-2" x-show="currentPlant.media && currentPlant.media.length > 1">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
                             <img :src="photo" @click="activePhotoIndex = index" class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 transition" :class="activePhotoIndex === index ? 'border-botanical-gold' : 'border-transparent opacity-60'">
@@ -233,7 +232,6 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
-    <!-- СКРИПТ -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('catalogApp', () => ({
@@ -241,6 +239,7 @@
                 onlyInStock: false, selectionList: [], comparisonList: [],
                 modalOpen: false, currentPlant: { media: [], title: '', group: '' }, 
                 activePhotoIndex: 0, comparisonOpen: false,
+                lightbox: null,
                 
                 async init() {
                     try {
@@ -280,28 +279,35 @@
                         }).filter(p => p !== null);
 
                         this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
+                        
+                        // Инициализируем Lightbox один раз при старте сайта
+                        this.lightbox = new PhotoSwipeLightbox({
+                            pswpModule: PhotoSwipe
+                        });
+                        this.lightbox.init();
+
                     } catch (e) { 
-                        console.error("Ошибка загрузки:", e); 
+                        console.error("Ошибка загрузки данных:", e); 
                     }
                 },
 
-                // ПРОГРАММНЫЙ ЗАПУСК ЗУМА
-                openZoom(idx) {
-                    if (!this.currentPlant.media || this.currentPlant.media.length === 0) return;
-                    
-                    const items = this.currentPlant.media.map(url => ({
-                        src: url,
-                        width: 1200,
-                        height: 1600
-                    }));
+                // ПРОГРАММНОЕ ОТКРЫТИЕ ЗУМА (НАДЕЖНО)
+                openZoom() {
+                    try {
+                        if (!this.currentPlant.media || this.currentPlant.media.length === 0) return;
+                        
+                        // Формируем список картинок для зума на лету
+                        const items = this.currentPlant.media.map(url => ({
+                            src: url,
+                            width: 1500,  // PhotoSwipe автоматически ужмет под экран телефона
+                            height: 1500
+                        }));
 
-                    const lightbox = new window.PhotoSwipeLightbox({
-                        dataSource: items,
-                        pswpModule: window.PhotoSwipe
-                    });
-                    
-                    lightbox.init();
-                    lightbox.loadAndOpen(idx);
+                        // Запускаем зум с нужной фотографии
+                        this.lightbox.loadAndOpen(this.activePhotoIndex, items);
+                    } catch (error) {
+                        alert("Ошибка зума: " + error.message);
+                    }
                 },
 
                 filteredPlants() {
