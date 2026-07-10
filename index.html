@@ -27,7 +27,7 @@
     <style>
         body { background-color: #FAF9F5; color: #1C352D; font-family: 'Inter', sans-serif; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        /* Простая плавная анимация картинок */
+        /* Плавная анимация зума картинок */
         .zoom-transition { transition: all 0.3s ease; }
     </style>
 </head>
@@ -46,7 +46,7 @@
         </div>
     </header>
 
-    <!-- ОСНОВНОЙ КОНТЕНТ (КАРТОЧКИ) -->
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-[1600px] mx-auto px-4 py-8">
         <!-- ФИЛЬТРЫ -->
         <div class="bg-white rounded-3xl p-6 shadow-sm border border-botanical-sage/10 mb-8">
@@ -69,13 +69,12 @@
             </div>
         </div>
 
-        <!-- КАРТОЧКИ -->
+        <!-- КАРТОЧКИ В КАТАЛОГЕ -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-24">
             <template x-for="plant in filteredPlants()" :key="plant.id">
                 <div class="bg-white rounded-3xl border border-botanical-sage/10 shadow-sm overflow-hidden flex flex-col hover:shadow-xl transition duration-300">
                     
                     <div class="relative aspect-[4/3] bg-botanical-cream overflow-hidden cursor-pointer" @click="openModal(plant)">
-                        <!-- Изображение на карточке -->
                         <img :src="plant.media[0]" class="w-full h-full object-contain hover:scale-105 transition duration-500">
                         <div class="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] uppercase font-semibold text-botanical-gold shadow-sm" x-text="plant.group"></div>
                         <div class="absolute top-3 right-3 shadow-sm">
@@ -104,19 +103,15 @@
         </div>
     </main>
 
-    <!-- ПОДРОБНОЕ ОКНО СОРТА (КАРТОЧКА С УХОДОМ) -->
+    <!-- ПОДРОБНОЕ ОКНО СОРТА -->
     <div x-show="modalOpen" class="fixed inset-0 z-40 overflow-y-auto" style="display: none;" x-transition>
         <div class="flex items-center justify-center min-h-screen px-4 py-6">
-            <!-- Задний фон -->
             <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" @click="closeModal()"></div>
 
             <div class="bg-white rounded-3xl max-w-5xl w-full mx-auto relative z-50 overflow-hidden shadow-2xl flex flex-col md:flex-row">
                 <button @click="closeModal()" class="absolute top-4 right-4 bg-white/90 hover:bg-gray-100 p-2.5 rounded-full shadow-md z-[55] text-botanical-deep font-bold">✕</button>
 
-                <!-- ЛЕВАЯ ЧАСТЬ: Фотографии -->
                 <div class="md:w-1/2 bg-botanical-cream p-6 flex flex-col justify-center border-r border-gray-100">
-                    
-                    <!-- БЛОК С КАРТИНКОЙ: Просто открываем нашу родную «лупу» при клике -->
                     <div class="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-zoom-in group" 
                          @click="openFullScreen()">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
@@ -127,7 +122,6 @@
                         </div>
                     </div>
                     
-                    <!-- Миниатюры для переключения -->
                     <div class="flex gap-2 mt-4 overflow-x-auto hide-scrollbar pb-2" x-show="currentPlant.media && currentPlant.media.length > 1">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
                             <img :src="photo" @click="activePhotoIndex = index" class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 transition" :class="activePhotoIndex === index ? 'border-botanical-gold' : 'border-transparent opacity-60'">
@@ -135,7 +129,6 @@
                     </div>
                 </div>
 
-                <!-- ПРАВАЯ ЧАСТЬ: Информация и Уход -->
                 <div class="md:w-1/2 p-8 lg:p-10 flex flex-col h-full max-h-[85vh] overflow-y-auto z-10 relative">
                     <span class="text-xs uppercase tracking-wider text-botanical-gold font-semibold" x-text="capitalize(currentPlant.group || '')"></span>
                     <h2 class="font-serif text-3xl font-bold text-botanical-deep mt-2 leading-tight" x-text="(currentPlant.number ? '№' + currentPlant.number + ' ' : '') + currentPlant.title"></h2>
@@ -167,28 +160,20 @@
         </div>
     </div>
 
-    <!-- ===== САМЫЙ БОЛЬШОЙ И НАДЕЖНЫЙ ЭКРАН (БЕЗ СТОРОННИХ БИБЛИОТЕК) ===== -->
+    <!-- ПОЛНОЭКРАННЫЙ ЗУМ БЕЗ СБОЕВ (Чистый код) -->
     <div x-show="isFullScreen" style="display: none;" class="fixed inset-0 z-[100] bg-black/95 flex flex-col justify-center items-center" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <!-- Кнопка закрытия просмотра -->
         <button @click="isFullScreen = false" class="absolute top-6 right-6 text-white bg-black/50 hover:bg-botanical-gold rounded-full w-12 h-12 flex items-center justify-center font-bold text-2xl z-[110] transition-colors duration-200">✕</button>
 
-        <!-- Большая фотография (Открывается прямо на весь экран) -->
         <div class="w-full h-full p-4 flex justify-center items-center relative overflow-hidden" @click="isFullScreen = false">
             <template x-for="(photo, index) in currentPlant.media" :key="index">
-                <img :src="photo" x-show="activePhotoIndex === index" @click.stop class="w-auto max-w-full h-auto max-h-[90vh] object-contain select-none cursor-default drop-shadow-2xl">
+                <!-- Фото максимально распахнуто -->
+                <img :src="photo" x-show="activePhotoIndex === index" @click.stop class="w-auto max-w-full h-auto max-h-[95vh] object-contain select-none cursor-default drop-shadow-2xl">
             </template>
         </div>
 
-        <!-- Кнопка Влево (Только если картинок > 1) -->
-        <button x-show="currentPlant.media && currentPlant.media.length > 1" @click.stop="prevPhoto()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-botanical-gold w-12 h-16 flex items-center justify-center text-3xl font-bold rounded-xl transition-colors duration-200 z-[110]">
-            &#10094;
-        </button>
-        <!-- Кнопка Вправо (Только если картинок > 1) -->
-        <button x-show="currentPlant.media && currentPlant.media.length > 1" @click.stop="nextPhoto()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-botanical-gold w-12 h-16 flex items-center justify-center text-3xl font-bold rounded-xl transition-colors duration-200 z-[110]">
-            &#10095;
-        </button>
+        <button x-show="currentPlant.media && currentPlant.media.length > 1" @click.stop="prevPhoto()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-botanical-gold w-12 h-16 flex items-center justify-center text-3xl font-bold rounded-xl transition-colors duration-200 z-[110]">&#10094;</button>
+        <button x-show="currentPlant.media && currentPlant.media.length > 1" @click.stop="nextPhoto()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-botanical-gold w-12 h-16 flex items-center justify-center text-3xl font-bold rounded-xl transition-colors duration-200 z-[110]">&#10095;</button>
 
-        <!-- Количество -->
         <div x-show="currentPlant.media && currentPlant.media.length > 1" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 text-sm font-semibold tracking-wider">
             Фото <span x-text="activePhotoIndex + 1"></span> из <span x-text="currentPlant.media.length"></span>
         </div>
@@ -257,7 +242,7 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
-    <!-- ПЕРЕПИСАННЫЙ ПРОЗРАЧНЫЙ И НАДЕЖНЫЙ КОД БЕЗ БИБЛИОТЕК ЗУМА -->
+    <!-- СИЛЬНО УМНЫЙ ПАРСЕР GOOGLE ТАБЛИЦЫ -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('catalogApp', () => ({
@@ -266,7 +251,7 @@
                 
                 modalOpen: false, currentPlant: { media: [], title: '', group: '' }, activePhotoIndex: 0,
                 comparisonOpen: false,
-                isFullScreen: false, // Наш собственный механизм!
+                isFullScreen: false, 
                 
                 async init() {
                     try {
@@ -280,6 +265,12 @@
                         
                         const json = JSON.parse(text.substring(startIdx, endIdx + 1));
                         
+                        // НОВАЯ ФУНКЦИЯ ДЛЯ ВЫДЕЛЕНИЯ ФОТО (Любые разделители)
+                        const parsePhotos = (str) => {
+                            if (!str) return [];
+                            return str.split(/[|, \n]+/).map(s => s.trim()).filter(s => s.startsWith('http'));
+                        };
+
                         this.plants = json.table.rows.map((row, i) => {
                             const c = (idx) => {
                                 if (!row || !row.c || !row.c[idx] || row.c[idx].v === null || row.c[idx].v === undefined) return '';
@@ -290,11 +281,9 @@
                             if (!title) return null;
 
                             const mediaList = [];
-                            const colM = c(12);
-                            const colN = c(13);
+                            mediaList.push(...parsePhotos(c(12)));
+                            mediaList.push(...parsePhotos(c(13)));
                             
-                            if (colM) mediaList.push(...colM.split('|').map(s=>s.trim()).filter(s=>s));
-                            if (colN) mediaList.push(...colN.split('|').map(s=>s.trim()).filter(s=>s));
                             if (mediaList.length === 0) mediaList.push('https://via.placeholder.com/600?text=Нет+фото');
 
                             return {
@@ -311,7 +300,6 @@
                     }
                 },
 
-                // Управление своим FullScreen экраном
                 openFullScreen() {
                     this.isFullScreen = true;
                 },
@@ -319,14 +307,14 @@
                     if (this.activePhotoIndex < this.currentPlant.media.length - 1) {
                         this.activePhotoIndex++;
                     } else {
-                        this.activePhotoIndex = 0; // Начинаем сначала
+                        this.activePhotoIndex = 0; 
                     }
                 },
                 prevPhoto() {
                     if (this.activePhotoIndex > 0) {
                         this.activePhotoIndex--;
                     } else {
-                        this.activePhotoIndex = this.currentPlant.media.length - 1; // Возврат в конец
+                        this.activePhotoIndex = this.currentPlant.media.length - 1;
                     }
                 },
 
@@ -343,7 +331,7 @@
                     this.currentPlant = plant;
                     this.activePhotoIndex = 0;
                     this.modalOpen = true;
-                    this.isFullScreen = false; // На всякий случай гасим ФуллСкрин при новом сорте
+                    this.isFullScreen = false;
                 },
                 closeModal() { this.modalOpen = false; },
                 
