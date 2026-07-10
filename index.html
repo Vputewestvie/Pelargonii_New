@@ -81,7 +81,7 @@
 
                     <div class="p-6 flex flex-col flex-grow">
                         <h3 class="font-serif text-xl font-bold leading-tight text-botanical-deep cursor-pointer" @click="openModal(plant)">
-                            <span x-text="plant.number ? '№' + plant.number + ' ' : ''"></span><span x-text="plant.title"></span>
+                            <span x-text="plant.title"></span>
                         </h3>
                         
                         <div class="flex gap-4 my-4 text-xs text-botanical-sage border-y border-botanical-sage/5 py-3">
@@ -224,13 +224,15 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
-    <!-- ПРАВИЛЬНЫЙ СКРИПТ (БЕЗ TYPE="MODULE") -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('catalogApp', () => ({
                 plants: [], groups: ['all'], activeGroup: 'all', searchQuery: '', 
                 onlyInStock: false, selectionList: [], comparisonList: [],
-                modalOpen: false, currentPlant: {}, activePhotoIndex: 0, comparisonOpen: false,
+                modalOpen: false, 
+                // ВОТ ИСПРАВЛЕНИЕ, ИЗ-ЗА КОТОРОГО БЫЛ БЕЛЫЙ ЭКРАН!
+                currentPlant: { media: [], title: '', group: '' }, 
+                activePhotoIndex: 0, comparisonOpen: false,
                 lightbox: null,
                 
                 async init() {
@@ -252,11 +254,11 @@
                             };
 
                             const title = c(1);
-                            if (!title) return null; // Пропускаем пустые строки!
+                            if (!title) return null;
 
                             const mediaList = [];
-                            const colM = c(12); // Цветение
-                            const colN = c(13); // Фото черенка
+                            const colM = c(12);
+                            const colN = c(13);
                             
                             if (colM) mediaList.push(...colM.split('|').map(s=>s.trim()).filter(s=>s));
                             if (colN) mediaList.push(...colN.split('|').map(s=>s.trim()).filter(s=>s));
@@ -272,7 +274,6 @@
 
                         this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
                         
-                        // Динамическая загрузка галереи, чтобы не ломать Alpine
                         this.$nextTick(async () => {
                             const module = await import('https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe-lightbox.esm.min.js');
                             const PhotoSwipeLightbox = module.default;
