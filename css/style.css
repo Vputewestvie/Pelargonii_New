@@ -1,2 +1,1 @@
-.plant-card { transition: transform 0.2s; }
-.plant-card:hover { transform: translateY(-5px); }
+body { font-family: 'Inter', sans-serif; }
