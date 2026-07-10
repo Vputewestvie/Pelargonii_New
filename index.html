@@ -4,14 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Авторская коллекция пеларгоний</title>
-    
-    <!-- Шрифты -->
+    <!-- Шрифты и стили -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind (Дизайн) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PhotoSwipe (Надежное подключение) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe-lightbox.umd.min.js"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -22,15 +28,6 @@
             }
         }
     </script>
-
-    <!-- PhotoSwipe (Галерея и Зум) - Подключено надежным способом -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe-lightbox.umd.min.js"></script>
-    
-    <!-- Alpine.js (Логика сайта) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
     <style>
         body { background-color: #FAF9F5; color: #1C352D; font-family: 'Inter', sans-serif; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -88,7 +85,7 @@
 
                     <div class="p-6 flex flex-col flex-grow">
                         <h3 class="font-serif text-xl font-bold leading-tight text-botanical-deep cursor-pointer" @click="openModal(plant)">
-                            <span x-text="plant.number ? '№' + plant.number + ' ' : ''"></span><span x-text="plant.title"></span>
+                            <span x-text="plant.title"></span>
                         </h3>
                         
                         <div class="flex gap-4 my-4 text-xs text-botanical-sage border-y border-botanical-sage/5 py-3">
@@ -117,18 +114,17 @@
             <div class="bg-white rounded-3xl max-w-5xl w-full mx-auto relative z-10 overflow-hidden shadow-2xl flex flex-col md:flex-row">
                 <button @click="closeModal()" class="absolute top-4 right-4 bg-white/90 hover:bg-gray-100 p-2.5 rounded-full shadow-md z-20 text-botanical-deep font-bold">✕</button>
 
-                <!-- Левая часть: Галерея -->
+                <!-- Левая часть: Галерея (ТЕПЕРЬ БЕЗ ССЫЛОК) -->
                 <div class="md:w-1/2 bg-botanical-cream p-6 flex flex-col justify-center border-r border-gray-100">
-                    <div id="modal-gallery" class="pswp-gallery relative aspect-square bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-zoom-in">
+                    <div class="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-zoom-in" @click="openZoom(activePhotoIndex)">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
-                            <a :href="photo" data-pswp-width="1200" data-pswp-height="1600" target="_blank" x-show="activePhotoIndex === index" class="block w-full h-full">
-                                <img :src="photo" class="w-full h-full object-contain">
-                            </a>
+                            <img :src="photo" x-show="activePhotoIndex === index" class="w-full h-full object-contain">
                         </template>
                         <div class="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
                             <span class="bg-black/50 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md">Нажмите для увеличения</span>
                         </div>
                     </div>
+                    
                     <!-- Миниатюры в окне -->
                     <div class="flex gap-2 mt-4 overflow-x-auto hide-scrollbar pb-2" x-show="currentPlant.media && currentPlant.media.length > 1">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
@@ -231,7 +227,7 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
-    <!-- АБСОЛЮТНО НАДЕЖНЫЙ СКРИПТ -->
+    <!-- СКРИПТ -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('catalogApp', () => ({
@@ -278,19 +274,26 @@
                         }).filter(p => p !== null);
 
                         this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
-                        
-                        // Надежный запуск галереи
-                        this.$nextTick(() => {
-                            const lightbox = new PhotoSwipeLightbox({
-                                gallery: '#modal-gallery',
-                                children: 'a',
-                                pswpModule: PhotoSwipe
-                            });
-                            lightbox.init();
-                        });
                     } catch (e) { 
                         console.error("Ошибка загрузки:", e); 
                     }
+                },
+
+                // УМНЫЙ ЗАПУСК ЗУМА БЕЗ ССЫЛОК
+                openZoom(idx) {
+                    if (!this.currentPlant.media || this.currentPlant.media.length === 0) return;
+                    
+                    const lightbox = new PhotoSwipeLightbox({
+                        dataSource: this.currentPlant.media.map(url => ({
+                            src: url,
+                            width: 1200, // PhotoSwipe сам аккуратно ужмет до размеров экрана
+                            height: 1600
+                        })),
+                        pswpModule: PhotoSwipe
+                    });
+                    
+                    lightbox.init();
+                    lightbox.loadAndOpen(idx);
                 },
 
                 filteredPlants() {
