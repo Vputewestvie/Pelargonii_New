@@ -81,7 +81,7 @@
 
                     <div class="p-6 flex flex-col flex-grow">
                         <h3 class="font-serif text-xl font-bold leading-tight text-botanical-deep cursor-pointer" @click="openModal(plant)">
-                            <span x-text="plant.title"></span>
+                            <span x-text="plant.number ? '№' + plant.number + ' ' : ''"></span><span x-text="plant.title"></span>
                         </h3>
                         
                         <div class="flex gap-4 my-4 text-xs text-botanical-sage border-y border-botanical-sage/5 py-3">
@@ -93,7 +93,7 @@
                             <span class="text-2xl font-bold text-botanical-deep" x-text="plant.price + ' ₽'"></span>
                             <div class="flex gap-2">
                                 <button @click="toggleComparison(plant)" :class="isInComparison(plant) ? 'bg-botanical-gold text-white' : 'bg-botanical-cream text-botanical-deep hover:bg-botanical-sage/10'" class="p-2.5 rounded-xl text-sm transition" title="Сравнить">⚖️</button>
-                                <button @click="toggleSelection(plant)" :class="isSelected(plant) ? 'bg-botanical-deep text-white' : 'border-2 border-botanical-deep text-botanical-deep'" class="px-4 py-2 rounded-xl text-sm font-semibold transition" x-text="isSelected(plant) ? 'В корзине' : 'Выбрать'"></button>
+                                <button @click="toggleSelection(plant)" :class="isSelected(plant) ? 'bg-botanical-deep text-white' : 'border-2 border-botanical-deep text-botanical-deep hover:bg-botanical-cream'" class="px-4 py-2 rounded-xl text-sm font-semibold transition" x-text="isSelected(plant) ? 'В корзине' : 'Выбрать'"></button>
                             </div>
                         </div>
                     </div>
@@ -155,7 +155,7 @@
 
                     <div class="mt-10 pt-6 border-t border-botanical-sage/10 flex justify-between items-center gap-4">
                         <span class="text-3xl font-bold text-botanical-deep" x-text="currentPlant.price + ' ₽'"></span>
-                        <button @click="toggleSelection(currentPlant)" :class="isSelected(currentPlant) ? 'bg-botanical-gold text-white' : 'bg-botanical-deep text-white'" class="px-8 py-4 rounded-xl font-bold transition shadow-lg hover:shadow-xl hover:-translate-y-1" x-text="isSelected(currentPlant) ? 'Добавлено в список' : 'Выбрать сорт'"></button>
+                        <button @click="toggleSelection(currentPlant)" :class="isSelected(currentPlant) ? 'bg-botanical-gold text-white' : 'bg-botanical-deep text-white'" class="px-8 py-4 rounded-xl font-bold transition shadow-lg hover:shadow-xl hover:-translate-y-1" x-text="isSelected(currentPlant) ? 'В списке' : 'Выбрать'"></button>
                     </div>
                 </div>
             </div>
@@ -224,10 +224,8 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
-    <!-- СКРИПТ (Бронебойный вариант) -->
-    <script type="module">
-        import PhotoSwipeLightbox from 'https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe-lightbox.esm.min.js';
-
+    <!-- ПРАВИЛЬНЫЙ СКРИПТ (БЕЗ TYPE="MODULE") -->
+    <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('catalogApp', () => ({
                 plants: [], groups: ['all'], activeGroup: 'all', searchQuery: '', 
@@ -247,9 +245,7 @@
                         
                         const json = JSON.parse(text.substring(startIdx, endIdx + 1));
                         
-                        // Парсим данные, игнорируя пустые строки
                         this.plants = json.table.rows.map((row, i) => {
-                            // Безопасная функция получения ячейки (без символа ?.)
                             const c = (idx) => {
                                 if (!row || !row.c || !row.c[idx] || row.c[idx].v === null || row.c[idx].v === undefined) return '';
                                 return String(row.c[idx].v).trim();
@@ -259,7 +255,7 @@
                             if (!title) return null; // Пропускаем пустые строки!
 
                             const mediaList = [];
-                            const colM = c(12); // Фото цветения
+                            const colM = c(12); // Цветение
                             const colN = c(13); // Фото черенка
                             
                             if (colM) mediaList.push(...colM.split('|').map(s=>s.trim()).filter(s=>s));
@@ -276,8 +272,10 @@
 
                         this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
                         
-                        // Инициализация PhotoSwipe
-                        this.$nextTick(() => {
+                        // Динамическая загрузка галереи, чтобы не ломать Alpine
+                        this.$nextTick(async () => {
+                            const module = await import('https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe-lightbox.esm.min.js');
+                            const PhotoSwipeLightbox = module.default;
                             this.lightbox = new PhotoSwipeLightbox({
                                 gallery: '#modal-gallery',
                                 children: 'a',
