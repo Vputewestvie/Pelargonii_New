@@ -6,15 +6,22 @@
     <title>Элитный каталог пеларгоний</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
-    <link rel="stylesheet" href="style.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .plant-card { transition: transform 0.2s; }
+        .plant-card:hover { transform: translateY(-5px); }
+    </style>
 </head>
 <body class="bg-[#FAF9F5] text-[#1C352D]" x-data="catalogApp()">
     
+    <!-- Шапка и Фильтры -->
     <header class="max-w-[1600px] mx-auto p-6">
-        <h1 class="text-4xl font-serif font-semibold mb-8">Цветочная Галерея</h1>
+        <div class="mb-8">
+            <span class="text-xs uppercase tracking-[0.2em] text-[#B48B5C] font-semibold">Авторская Коллекция</span>
+            <h1 class="text-4xl font-serif font-semibold mt-1">Цветочная Галерея</h1>
+        </div>
         
-        <!-- Полная панель фильтров -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6 justify-between">
             <div class="flex flex-wrap gap-2">
                 <template x-for="group in groups" :key="group">
@@ -36,29 +43,25 @@
         </div>
     </header>
 
-    <main class="max-w-[1600px] mx-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <!-- Сетка карточек -->
+    <main class="max-w-[1600px] mx-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-24">
         <template x-for="plant in filteredPlants()" :key="plant.id">
-            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition duration-300">
+            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 flex flex-col plant-card">
                 
-                <!-- Галерея PhotoSwipe -->
                 <div class="pswp-gallery relative aspect-[4/3] bg-gray-50 cursor-pointer overflow-hidden" :id="'gallery-' + plant.id">
                     <template x-for="(photo, index) in plant.media" :key="index">
                         <a :href="photo" data-pswp-width="1200" data-pswp-height="1600" target="_blank" 
-                           x-show="index === 0" class="block w-full h-full group">
-                            <!-- Картинка чуть увеличивается при наведении (эффект Ozon/WB) -->
+                           x-show="index === 0" class="block w-full h-full group" @click.prevent="">
                             <img :src="photo" loading="lazy" class="w-full h-full object-contain group-hover:scale-105 transition duration-500">
                         </a>
                     </template>
-                    
-                    <!-- Бейджик, если фото больше одного -->
-                    <div x-show="plant.media.length > 1" class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
+                    <div x-show="plant.media.length > 1" class="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-md">
                         <span x-text="plant.media.length + ' фото'"></span>
                     </div>
                 </div>
 
-                <!-- Информация -->
                 <div class="p-6 flex flex-col flex-grow">
-                    <span class="text-xs text-gray-500" x-text="plant.latinTitle"></span>
+                    <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider text-[#B48B5C]" x-text="plant.group"></span>
                     <h3 class="font-serif font-bold text-xl mt-1 leading-tight text-[#1C352D]">
                         <span x-text="plant.number ? '№' + plant.number + ' ' : ''"></span><span x-text="plant.title"></span>
                     </h3>
@@ -80,7 +83,7 @@
         </template>
     </main>
 
-    <!-- Корзина (Всплывает снизу) -->
+    <!-- Корзина -->
     <div x-show="selectionList.length > 0" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-sm" x-transition style="display: none;">
         <button @click="copyForAvito()" class="w-full bg-[#1C352D] text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex justify-between items-center hover:bg-opacity-90 transition">
             <span>Список для Авито (<span x-text="selectionList.length"></span>)</span>
@@ -88,7 +91,76 @@
         </button>
     </div>
 
-    <!-- Скрипт подключается БЕЗ type="module", чтобы не конфликтовать с Alpine -->
-    <script src="catalog.js"></script>
+    <script type="module">
+        import PhotoSwipeLightbox from 'https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe-lightbox.esm.min.js';
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('catalogApp', () => ({
+                plants: [], groups: ['all'], activeGroup: 'all', searchQuery: '', 
+                onlyInStock: false, selectionList: [],
+                
+                async init() {
+                    try {
+                        const id = '1tr_vl_q8yh4grAmJkaD7QvmueQQvbJGojm7C_otpyd4';
+                        const res = await fetch(`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json`);
+                        const text = await res.text();
+                        const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+                        
+                        this.plants = json.table.rows.slice(1).map((row, i) => {
+                            const c = (idx) => row.c[idx]?.v || '';
+                            // Берем фото цветения (кол. M=12) и черенка (кол. N=13)
+                            const mediaList = [];
+                            if (c(12)) mediaList.push(...c(12).split('|').map(s=>s.trim()).filter(s=>s));
+                            if (c(13)) mediaList.push(...c(13).split('|').map(s=>s.trim()).filter(s=>s));
+                            if (mediaList.length === 0) mediaList.push('https://via.placeholder.com/600?text=Нет+фото');
+
+                            return {
+                                id: i, number: c(0), title: c(1), stock: Number(c(2)) || 0,
+                                latinTitle: c(3), group: (c(4) || 'all').toLowerCase().trim(),
+                                flowerSize: c(6), inflorescenceSize: c(7), price: Number(c(8)) || 0,
+                                media: mediaList
+                            };
+                        }).filter(p => p.title);
+
+                        this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
+                        
+                        this.$nextTick(() => {
+                            const lightbox = new PhotoSwipeLightbox({
+                                gallery: '.pswp-gallery',
+                                children: 'a',
+                                pswpModule: () => import('https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.esm.min.js')
+                            });
+                            lightbox.init();
+                        });
+                    } catch (e) {
+                        console.error("Ошибка:", e);
+                    }
+                },
+                filteredPlants() {
+                    return this.plants.filter(p => {
+                        const mGroup = this.activeGroup === 'all' || p.group === this.activeGroup;
+                        const mStock = !this.onlyInStock || p.stock > 0;
+                        const mSearch = p.title.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        return mGroup && mStock && mSearch;
+                    });
+                },
+                toggleSelection(p) { 
+                    const idx = this.selectionList.findIndex(item => item.id === p.id);
+                    idx > -1 ? this.selectionList.splice(idx, 1) : this.selectionList.push(p);
+                },
+                isSelected(p) { return this.selectionList.some(item => item.id === p.id); },
+                copyForAvito() {
+                    let text = "Здравствуйте! Заказ:\n\n";
+                    let sum = 0;
+                    this.selectionList.forEach(p => {
+                        text += `• №${p.number} ${p.title} (${p.price} ₽)\n`;
+                        sum += p.price;
+                    });
+                    text += `\nИтого: ${sum} ₽.`;
+                    navigator.clipboard.writeText(text).then(() => alert('Список скопирован!'));
+                }
+            }));
+        });
+    </script>
 </body>
 </html>
