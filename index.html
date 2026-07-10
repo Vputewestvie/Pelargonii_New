@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Авторская коллекция пеларгоний</title>
     
+    <!-- Шрифты и стили -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/umd/photoswipe-lightbox.umd.min.js"></script>
+    <!-- Fancybox 5/6 (Современная и надежная замена PhotoSwipe) -->
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
     
+    <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <script>
@@ -34,6 +35,7 @@
 </head>
 <body x-data="catalogApp()" x-init="init()">
 
+    <!-- ШАПКА САЙТА -->
     <header class="border-b border-botanical-sage/20 py-8 px-4 bg-white/50 backdrop-blur-md sticky top-0 z-30">
         <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="text-center md:text-left">
@@ -47,6 +49,7 @@
     </header>
 
     <main class="max-w-[1600px] mx-auto px-4 py-8">
+        <!-- ФИЛЬТРЫ И ПОИСК -->
         <div class="bg-white rounded-3xl p-6 shadow-sm border border-botanical-sage/10 mb-8">
             <div class="flex flex-col lg:flex-row gap-6 justify-between items-center">
                 <div class="flex flex-wrap gap-2">
@@ -67,6 +70,7 @@
             </div>
         </div>
 
+        <!-- СЕТКА КАРТОЧЕК -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-24">
             <template x-for="plant in filteredPlants()" :key="plant.id">
                 <div class="bg-white rounded-3xl border border-botanical-sage/10 shadow-sm overflow-hidden flex flex-col hover:shadow-xl transition duration-300">
@@ -102,6 +106,7 @@
         </div>
     </main>
 
+    <!-- ПОДРОБНОЕ ОКНО СОРТА -->
     <div x-show="modalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" x-transition>
         <div class="flex items-center justify-center min-h-screen px-4 py-6">
             <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" @click="closeModal()"></div>
@@ -109,19 +114,22 @@
             <div class="bg-white rounded-3xl max-w-5xl w-full mx-auto relative z-10 overflow-hidden shadow-2xl flex flex-col md:flex-row">
                 <button @click="closeModal()" class="absolute top-4 right-4 bg-white/90 hover:bg-gray-100 p-2.5 rounded-full shadow-md z-20 text-botanical-deep font-bold">✕</button>
 
+                <!-- Левая часть: Фото -->
                 <div class="md:w-1/2 bg-botanical-cream p-6 flex flex-col justify-center border-r border-gray-100">
+                    
                     <div class="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 cursor-zoom-in group" 
                          @click="openZoom()">
                         
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
-                            <img :src="photo" x-show="activePhotoIndex === index" class="w-full h-full object-contain cursor-zoom-in">
+                            <img :src="photo" x-show="activePhotoIndex === index" class="w-full h-full object-contain">
                         </template>
                         
                         <div class="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center pointer-events-none">
-                            <span class="bg-black/60 text-white text-sm px-4 py-2 rounded-full backdrop-blur-md">🔍 Нажмите для увеличения</span>
+                            <span class="bg-black/60 text-white text-sm px-4 py-2 rounded-full backdrop-blur-md shadow-lg">🔍 Нажмите для увеличения</span>
                         </div>
                     </div>
                     
+                    <!-- Миниатюры -->
                     <div class="flex gap-2 mt-4 overflow-x-auto hide-scrollbar pb-2" x-show="currentPlant.media && currentPlant.media.length > 1">
                         <template x-for="(photo, index) in currentPlant.media" :key="index">
                             <img :src="photo" @click="activePhotoIndex = index" class="w-16 h-16 object-cover rounded-lg cursor-pointer border-2 transition" :class="activePhotoIndex === index ? 'border-botanical-gold' : 'border-transparent opacity-60'">
@@ -129,6 +137,7 @@
                     </div>
                 </div>
 
+                <!-- Правая часть: Текст -->
                 <div class="md:w-1/2 p-8 lg:p-10 flex flex-col h-full max-h-[85vh] overflow-y-auto">
                     <span class="text-xs uppercase tracking-wider text-botanical-gold font-semibold" x-text="capitalize(currentPlant.group || '')"></span>
                     <h2 class="font-serif text-3xl font-bold text-botanical-deep mt-2 leading-tight" x-text="(currentPlant.number ? '№' + currentPlant.number + ' ' : '') + currentPlant.title"></h2>
@@ -160,6 +169,7 @@
         </div>
     </div>
 
+    <!-- ТАБЛИЦА СРАВНЕНИЯ -->
     <div x-show="comparisonList.length > 0" class="fixed bottom-28 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-botanical-gold/30 px-6 py-4 flex items-center gap-6 z-40" style="display: none;" x-transition>
         <span class="text-sm font-bold text-botanical-deep flex items-center gap-2">⚖️ К сравнению: <span x-text="comparisonList.length"></span></span>
         <button @click="comparisonOpen = true" class="bg-botanical-gold text-white px-5 py-2.5 rounded-xl text-xs font-bold transition">Сравнить</button>
@@ -212,6 +222,7 @@
         </div>
     </div>
 
+    <!-- КОРЗИНА АВИТО -->
     <div x-show="selectionList.length > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-botanical-deep text-white rounded-full shadow-2xl px-8 py-4 flex items-center gap-8 z-40 max-w-lg w-11/12" style="display: none;" x-transition>
         <div class="text-left flex-1">
             <span class="text-xs uppercase tracking-wider block opacity-75">Выбрано сортов: <span x-text="selectionList.length"></span></span>
@@ -220,6 +231,7 @@
         <button @click="copyForAvito()" class="bg-botanical-gold text-white hover:bg-opacity-90 px-6 py-3 rounded-full text-xs font-bold tracking-wider uppercase transition shadow-lg hover:-translate-y-0.5">В Авито</button>
     </div>
 
+    <!-- СКРИПТ ЛОГИКИ -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('catalogApp', () => ({
@@ -267,30 +279,24 @@
 
                         this.groups = ['all', ...new Set(this.plants.map(p => p.group))];
                     } catch (e) { 
-                        console.error("Ошибка загрузки:", e); 
+                        console.error("Ошибка загрузки данных:", e); 
                     }
                 },
 
                 openZoom() {
                     if (!this.currentPlant || !this.currentPlant.media || this.currentPlant.media.length === 0) return;
                     
-                    const items = this.currentPlant.media.map(url => {
-                        let w = 1200;
-                        let h = 1600;
-                        const imgEl = document.querySelector(`img[src="${url}"]`);
-                        if (imgEl && imgEl.naturalWidth) {
-                            w = imgEl.naturalWidth;
-                            h = imgEl.naturalHeight;
-                        }
-                        return { src: url, width: w, height: h };
-                    });
+                    const items = this.currentPlant.media.map(url => ({
+                        src: url,
+                        type: "image"
+                    }));
 
-                    const pswp = new window.PhotoSwipe({
-                        dataSource: items,
-                        index: this.activePhotoIndex
+                    Fancybox.show(items, {
+                        startIndex: this.activePhotoIndex,
+                        Images: {
+                            initialSize: "fit"
+                        }
                     });
-                    
-                    pswp.init();
                 },
 
                 filteredPlants() {
